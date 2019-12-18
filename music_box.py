@@ -13,7 +13,7 @@ btn24 = Button(24)
 
 # initialize music player state
 pygame.mixer.init()
-pygame.mixer.music.load('/home/pi/musicbox/music.mp3')
+pygame.mixer.music.load('/home/pi/musicbox/file-examples.com-music.mp3')
 pygame.mixer.music.play()
 pygame.mixer.music.pause()
 play_state = "pause"
