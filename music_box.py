@@ -4,29 +4,96 @@ import pygame
 
 from signal import pause
 
-
-# initialize pygame module
-pygame.init()
-
-# initialize button
-play_pause_btn = Button(27)
-btn17 = Button(17)
-btn22 = Button(22)
-btn23 = Button(23)
-btn24 = Button(24)
-
-# initialize music player state
-pygame.mixer.init()
-pygame.mixer.music.load('/home/pi/musicbox/file-examples.com-music.mp3')
-pygame.mixer.music.play()
-pygame.mixer.music.pause()
-play_state = "pause"
+import os
 
 
-# play/pause event function
-def play_pause_func():
-    # tell function its ok to use global variable
-    global play_state
+class Player:
+  
+  dir_list   = []
+  dir_pos    = 0
+  
+  title_list = []
+  title_pos  = 0
+
+  play_state = "pause"
+
+  # Initialize
+  def __init__(self):
+    
+    pth = '/home/pi/musicbox/music'
+    self.dir_list = [os.path.join(pth, f)  for f in os.listdir(pth) if os.path.isdir(os.path.join(pth, f))]
+    
+    self.refresh_title_list()
+
+    # initialize music player state
+    pygame.mixer.init()
+    pygame.mixer.music.load(self.title_list[self.title_pos])
+    pygame.mixer.music.play()
+    pygame.mixer.music.pause()
+
+    self.info("-- player ready -- ")
+
+  def refresh_title_list(self):
+    self.title_pos = 0
+    pth = os.path.join(self.dir_list[self.dir_pos])
+    self.title_list = [os.path.join(pth, f) for f in os.listdir(pth) if os.path.isfile(os.path.join(pth, f))]
+    self.title_list = [ fi for fi in self.title_list if fi.endswith(".mp3") ]
+    self.title_list.sort()
+
+  def info(self, pre):
+    print(pre, self.dir_pos, self.dir_list[self.dir_pos], self.title_pos, self.title_list[self.title_pos])
+
+
+  def folder_forward(self):
+    new_pos = min(len(self.dir_list) - 1, self.dir_pos + 1)
+
+    if new_pos is not self.dir_pos:
+      self.dir_pos = new_pos
+      self.refresh_title_list()
+      self.play_current_title_item()
+
+    self.info(">>")
+
+
+  def folder_backward(self):
+    new_pos = max(0, self.dir_pos - 1)
+
+    if new_pos is not self.dir_pos:
+      self.dir_pos = new_pos
+      self.refresh_title_list()
+      self.play_current_title_item()
+
+    self.info("<<")
+
+
+  def title_forward(self):
+    new_pos = max(0, self.title_pos + 1)
+
+    if new_pos is not self.title_pos:
+      self.title_pos = new_pos
+      self.play_current_title_item()
+
+    self.info("|>")
+  
+
+  def title_backward(self):
+    new_pos = max(0, self.title_pos - 1)
+    
+    if new_pos is not self.title_pos:
+      self.title_pos = new_pos
+      self.play_current_title_item()
+
+    self.info("<|")
+
+
+  def play_current_title_item(self):
+    pygame.mixer.music.load(self.title_list[self.title_pos])
+    pygame.mixer.music.play()
+    pygame.mixer.music.unpause()
+    self.play_state = "unpause"
+
+
+  def play_pause(self):
 
     # check if maybe player is done playing or not
     if pygame.mixer.music.get_busy() == 0:
@@ -34,44 +101,59 @@ def play_pause_func():
 
         pygame.mixer.music.play()
         pygame.mixer.music.unpause()
-        play_state = "unpause"
+        self.play_state = "unpause"
 
     else:
         # if player still has some title to play switch pause state
 
         # pause --> unpause
-        if play_state == "pause":
+        if self.play_state == "pause":
             pygame.mixer.music.unpause()
-            play_state = "unpause"
+            self.play_state = "unpause"
 
         # unpause --> pause
-        elif play_state == "unpause":
+        elif self.play_state == "unpause":
             pygame.mixer.music.pause()
-            play_state = "pause"
+            self.play_state = "pause"
 
     # print some feedback to console
-    print("27 " + play_state)
+    if self.play_state == "pause":
+      self.info("||")
+    else:
+      self.info("~~")
+
+
+# initialize pygame module
+pygame.init()
+
+
+# initialize button
+play_pause_btn      = Button(24)
+title_forward_btn   = Button(27)
+title_backward_btn  = Button(17)
+folder_forward_btn  = Button(22)
+folder_backward_btn = Button(23)
 
 
 
-def h17():
-    print("17")
 
-def h22():
-    print("22")
 
-def h23():
-    print("23")
 
-def h24():
-    print("24")
 
-btn17.when_pressed = h17
-play_pause_btn.when_pressed = play_pause_func
-btn22.when_pressed = h22
-btn23.when_pressed = h23
-btn24.when_pressed = h24
+
+# initilize player 
+player = Player()
+
+# wire up buttons and player functions
+play_pause_btn.when_pressed      = player.play_pause
+title_forward_btn.when_pressed   = player.title_forward
+title_backward_btn.when_pressed  = player.title_backward
+folder_forward_btn.when_pressed  = player.folder_forward
+folder_backward_btn.when_pressed = player.folder_backward
+
 
 
 # keep script running 
 pause()
+
+
