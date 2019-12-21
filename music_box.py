@@ -16,12 +16,12 @@ class Player:
   title_pos  = 0
 
   play_state = "pause"
+  music_path  = '/home/pi/musicbox/music'
 
   # Initialize
   def __init__(self):
     
-    pth = '/home/pi/musicbox/music'
-    self.dir_list = [os.path.join(pth, f)  for f in os.listdir(pth) if os.path.isdir(os.path.join(pth, f))]
+    
     
     self.refresh_title_list()
 
@@ -39,6 +39,11 @@ class Player:
     self.title_list = [os.path.join(pth, f) for f in os.listdir(pth) if os.path.isfile(os.path.join(pth, f))]
     self.title_list = [ fi for fi in self.title_list if fi.endswith(".mp3") ]
     self.title_list.sort()
+
+  def refresh_dir_list(self):
+    pth = self.music_path
+    self.dir_list = [os.path.join(pth, f)  for f in os.listdir(pth) if os.path.isdir(os.path.join(pth, f))]
+    self.dir_list.sort()
 
   def info(self, pre):
     print(pre, self.dir_pos, self.dir_list[self.dir_pos], self.title_pos, self.title_list[self.title_pos])
