@@ -1,14 +1,23 @@
 # imports
 from gpiozero import Button
-import pygame
 
-from signal import pause
+import pygame
+import time
 
 import os
 
 
+def list_dir_recursive(path):
+  res = []
+  for currentpath, folders, files in os.walk(path):
+      for file in files:
+          res.append(os.path.join(currentpath, file))
+  return res
+
+
 class Player:
   
+  # object state
   dir_list   = []
   dir_pos    = 0
   
@@ -17,6 +26,8 @@ class Player:
 
   play_state = "pause"
   music_path  = '.'
+
+
 
   # Initialize
   def __init__(self, music_path):
@@ -34,12 +45,26 @@ class Player:
 
     self.info("-- player ready -- ")
 
+
+
   def refresh_title_list(self):
+    # reset title position
     self.title_pos = 0
-    pth = os.path.join(self.dir_list[self.dir_pos])
-    self.title_list = [os.path.join(pth, f) for f in os.listdir(pth) if os.path.isfile(os.path.join(pth, f))]
+    
+    # list files
+    self.title_list = list_dir_recursive(self.dir_list[self.dir_pos])
+    
+    # filter
     self.title_list = [ fi for fi in self.title_list if fi.endswith(".mp3") ]
+    
+    # sort 
     self.title_list.sort()
+
+    # handle empty folders
+    if len(self.title_list) == 0:
+      self.title_list = self.music_path.join("/keine-titel-gefunden.mp3")
+
+
 
   def refresh_dir_list(self):
     pth = self.music_path
@@ -132,46 +157,80 @@ class Player:
       self.info("~~")
 
 
-# initialize pygame module
-import pygame.display
-os.putenv('SDL_VIDEODRIVER', 'fbcon')
-pygame.display.init()
-pygame.init()
-
-# add nwe event to pygame machinery
-MUSIC_END = pygame.USEREVENT+1
-pygame.mixer.music.set_endevent(MUSIC_END)
 
 
-# initialize button
-play_pause_btn      = Button(23)
-title_forward_btn   = Button(22)
-title_backward_btn  = Button(27)
-folder_forward_btn  = Button(24)
-folder_backward_btn = Button(17)
+if os.name is not 'nt':
+  # initialize player 
+  player = Player(music_path = '/home/pi/musicbox/music')
+
+  # initialize buttons
+  play_pause_btn      = Button(23)
+  title_forward_btn   = Button(22)
+  title_backward_btn  = Button(27)
+  folder_forward_btn  = Button(24)
+  folder_backward_btn = Button(17)
+
+  # wire up buttons and player functions
+  play_pause_btn.when_pressed      = player.play_pause
+  title_forward_btn.when_pressed   = player.title_forward
+  title_backward_btn.when_pressed  = player.title_backward
+  folder_forward_btn.when_pressed  = player.folder_forward
+  folder_backward_btn.when_pressed = player.folder_backward
+  
 
 
-# initilize player 
-player = Player(music_path = '/home/pi/musicbox/music')
+else:
+  
+  import pynput
+  
+  # initialize player 
+  player = Player(music_path = 'f:/musicbox/music')
+
+  # key event handler
+  def on_press(key):
+      global go_on
+      print('{0} press'.format(key))
+
+      if key == pynput.keyboard.Key.left:
+        player.title_backward()
+
+      if key == pynput.keyboard.Key.right:
+        player.title_forward()
+
+      if key == pynput.keyboard.Key.up:
+        player.folder_forward()
+
+      if key == pynput.keyboard.Key.down:
+        player.folder_backward()
+
+      if key == pynput.keyboard.Key.enter:
+        player.play_pause()
+
+      if key == pynput.keyboard.Key.esc:
+          # Stop listener
+          go_on = False
+          return False
+
+  def on_release(key):
+      print('{0} release'.format(key))
+
+  listener = pynput.keyboard.Listener(on_press=on_press, on_release=on_release)
+  listener.start()
+  
 
 
-# wire up buttons and player functions
-play_pause_btn.when_pressed      = player.play_pause
-title_forward_btn.when_pressed   = player.title_forward
-title_backward_btn.when_pressed  = player.title_backward
-folder_forward_btn.when_pressed  = player.folder_forward
-folder_backward_btn.when_pressed = player.folder_backward
-
-
-# keep script running 
-#pause()
+# infinit loop and 
+print("loop")
 
 go_on = True
+
 while go_on == True:
-  for event in pygame.event.get():
-    
-    if event.type == MUSIC_END:
+  if pygame.mixer.music.get_busy() == 0:
+    if (player.title_pos + 1) < len(player.title_list):
       player.title_forward()
+    time.sleep(1)
+  else:
+    time.sleep(0.01)
 
 
 pygame.quit()
