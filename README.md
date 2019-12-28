@@ -37,3 +37,10 @@ Add the follwoing line to get the script started at boot up.
   ]
 }
 ```
+
+
+# Audio Comment Telling Children What they are about to Hear
+
+Free online text-to-speach (mp3) service:
+
+https://notevibes.com/de/
