@@ -18,11 +18,13 @@ Add the follwoing line to get the script started at boot up.
 
 # VSCode Debug Config
 
+>   // Use IntelliSense to learn about possible attributes.
+>  // Hover to view descriptions of existing attributes.
+>  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+>  // IMPORTANT PART to make pygame work without actual display
+
 ```JSON
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
@@ -31,8 +33,7 @@ Add the follwoing line to get the script started at boot up.
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      // IMPORTANT PART to make pygame work without actual display
-      "env": {"DISPLAY": '0.0'}
+       "env": {"DISPLAY": '0.0'}
     }
   ]
 }
