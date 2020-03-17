@@ -33,7 +33,7 @@ Add the follwoing line to get the script started at boot up.
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-       "env": {"DISPLAY": '0.0'}
+       "env": {"DISPLAY": "0.0"}
     }
   ]
 }
