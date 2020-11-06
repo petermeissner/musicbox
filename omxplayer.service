@@ -1,0 +1,23 @@
+# file location:  /etc/systemd/system/omxplayer.service
+# enable with:    sudo systemctl enable omxplayer
+
+
+
+[Unit]
+Description=Web radio
+Before=systemd-user-sessions.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+RestartSec=1
+
+ExecStart=/usr/bin/omxplayer https://st02.sslstream.dlf.de/dlf/02/128/mp3/stream.mp3
+Type=simple
+User=pi
+
+ExecStop=/usr/bin/killall omxplayer
+User=pi
+
+[Install]
+WantedBy=multi-user.target
