@@ -44,4 +44,5 @@ Add the follwoing line to get the script started at boot up.
 
 Free online text-to-speach (mp3) service:
 
-https://notevibes.com/de/
+free so far: https://console.aws.amazon.com/polly/home/SynthesizeSpeech
+no free anymore: https://notevibes.com/de/
