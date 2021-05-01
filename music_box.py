@@ -1,13 +1,42 @@
-# imports
+#### Description #### ----------------------------------------------------------
+
+# Simple MP3 Music-Player 
+# 
+# Uses pygame for event handling and mp3 playing
+#
+# 5 physical Buttons are used for control
+#
+# 1)  <<- folder backward = Pin 17
+# 2)  <-- title backward  = Pin 27
+# 3)  |>  play pause      = Pin 23
+# 4)  --> title forward   = Pin 22
+# 5)  ->> folder forward  = Pin 24
+#  
+
+
+#### Imports ####
 from gpiozero import Button
 
 import pygame
 import time
 
 import os
+from typing import List
 
 
-def list_dir_recursive(path):
+
+#### Functions #### ------------------------------------------------------------
+
+def list_dir_recursive(path: str) -> List[str]:
+  """
+  Goes through folder and lists all its files. 
+
+  Args:
+      path (str): path to look for files
+
+  Returns:
+      List[str]: a list of file paths
+  """
   res = []
   for currentpath, folders, files in os.walk(path):
       for file in files:
@@ -15,29 +44,44 @@ def list_dir_recursive(path):
   return res
 
 
+
+#### Classes #### --------------------------------------------------------------
 class Player:
-  
-  # object state
+  """
+  Class that serves as a music player connecting button events to play actions
+  depending on the current state - e.g. play/pause, current track, current folder. 
+  """
+
+
+  # object states
+    
+  # - current directory
   dir_list   = []
   dir_pos    = 0
   
+  # - current title
   title_list = []
   title_pos  = 0
 
+  # - current play state
   play_state = "pause"
+
+  # - optional musicpath
   music_path  = '.'
 
 
 
   # Initialize
-  def __init__(self, music_path):
+  def __init__(self, music_path: str):
     
+    # store musicpath 
     self.music_path = music_path
 
+    # read in directories and titles in music path
     self.refresh_dir_list()
     self.refresh_title_list()
 
-    # initialize music player state
+    # initialize music player state with first track and a ready music player
     pygame.mixer.init()
     pygame.mixer.music.load(self.title_list[self.title_pos])
     pygame.mixer.music.play()
@@ -48,6 +92,10 @@ class Player:
 
 
   def refresh_title_list(self):
+    """
+    Method for re-initializing title list: re-set position + re-list titles in folder
+    """
+
     # reset title position
     self.title_pos = 0
     
@@ -67,15 +115,30 @@ class Player:
 
 
   def refresh_dir_list(self):
+    """
+    Method for refreshing the current list of folders.
+    """
     pth = self.music_path
     self.dir_list = [os.path.join(pth, f)  for f in os.listdir(pth) if os.path.isdir(os.path.join(pth, f))]
     self.dir_list.sort()
 
-  def info(self, pre):
+
+
+  def info(self, pre: str):
+    """
+    Method for printing info about current player state.
+
+    Args:
+        pre (str): A string prefix, to be printed before
+    """
     print(pre, self.dir_pos, self.dir_list[self.dir_pos], self.title_pos, self.title_list[self.title_pos])
 
 
+
   def folder_forward(self):
+    """
+    Method for acting on folder-forward button push: going to next folder in list
+    """
     self.refresh_dir_list()
     new_pos = min(len(self.dir_list) - 1, self.dir_pos + 1)
 
@@ -87,7 +150,11 @@ class Player:
     self.info(">>")
 
 
+
   def folder_backward(self):
+    """
+    Method for acting on folder-backward button push: going to previous folder in list
+    """
     self.refresh_dir_list()
     new_pos = max(0, self.dir_pos - 1)
 
@@ -99,7 +166,11 @@ class Player:
     self.info("<<")
 
 
+
   def title_forward(self):
+    """
+    Method for acting on title-forward button push: going to next title in list
+    """
     new_pos = min(len(self.title_list) - 1 , self.title_pos + 1)
 
     if new_pos is not self.title_pos:
@@ -110,6 +181,9 @@ class Player:
   
 
   def title_backward(self):
+    """
+    Method for acting on title-backward button push: going to previous title in list
+    """
     new_pos = max(0, self.title_pos - 1)
     
     if new_pos is not self.title_pos:
@@ -120,6 +194,9 @@ class Player:
 
 
   def play_current_title_item(self):
+    """
+    Method for playing current title.
+    """
     pygame.mixer.music.load(self.title_list[self.title_pos])
     pygame.mixer.music.play()
     pygame.mixer.music.unpause()
@@ -128,6 +205,9 @@ class Player:
 
 
   def play_pause(self):
+    """
+    Method alternating between play and pause.
+    """
 
     # check if maybe player is done playing or not
     if pygame.mixer.music.get_busy() == 0:
@@ -159,79 +239,44 @@ class Player:
 
 
 
-if os.name is not 'nt':
-  # initialize player 
-  player = Player(music_path = '/home/pi/musicbox/music')
 
-  # initialize buttons
-  play_pause_btn      = Button(23)
-  title_forward_btn   = Button(22)
-  title_backward_btn  = Button(27)
-  folder_forward_btn  = Button(24)
-  folder_backward_btn = Button(17)
+ #### DoingDutyToDo #### -------------------------------------------------------
 
-  # wire up buttons and player functions
-  play_pause_btn.when_pressed      = player.play_pause
-  title_forward_btn.when_pressed   = player.title_forward
-  title_backward_btn.when_pressed  = player.title_backward
-  folder_forward_btn.when_pressed  = player.folder_forward
-  folder_backward_btn.when_pressed = player.folder_backward
+
+# initialize player 
+player = Player(music_path = '/home/pi/musicbox/music')
+
+# initialize buttons
+play_pause_btn      = Button(23)
+title_forward_btn   = Button(22)
+title_backward_btn  = Button(27)
+folder_forward_btn  = Button(24)
+folder_backward_btn = Button(17)
+
+# wire up buttons and player functions
+play_pause_btn.when_pressed      = player.play_pause
+title_forward_btn.when_pressed   = player.title_forward
+title_backward_btn.when_pressed  = player.title_backward
+folder_forward_btn.when_pressed  = player.folder_forward
+folder_backward_btn.when_pressed = player.folder_backward
   
 
-
-else:
-  
-  import pynput
-  
-  # initialize player 
-  player = Player(music_path = 'f:/musicbox/music')
-
-  # key event handler
-  def on_press(key):
-      global go_on
-      print('{0} press'.format(key))
-
-      if key == pynput.keyboard.Key.left:
-        player.title_backward()
-
-      if key == pynput.keyboard.Key.right:
-        player.title_forward()
-
-      if key == pynput.keyboard.Key.up:
-        player.folder_forward()
-
-      if key == pynput.keyboard.Key.down:
-        player.folder_backward()
-
-      if key == pynput.keyboard.Key.enter:
-        player.play_pause()
-
-      if key == pynput.keyboard.Key.esc:
-          # Stop listener
-          go_on = False
-          return False
-
-  def on_release(key):
-      print('{0} release'.format(key))
-
-  listener = pynput.keyboard.Listener(on_press=on_press, on_release=on_release)
-  listener.start()
-  
-
-
-# infinit loop and 
 print("loop")
-
 go_on = True
-
 while go_on == True:
+  
+  # if player is idle, play next track
   if pygame.mixer.music.get_busy() == 0:
     if (player.title_pos + 1) < len(player.title_list):
       player.title_forward()
     time.sleep(1)
+  
+  # if busy, just wait a little bit and check again
   else:
     time.sleep(0.01)
 
 
+
+# tear down and exit
 pygame.quit()
 
