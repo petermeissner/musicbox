@@ -89,7 +89,7 @@ class Player:
 
   # Initialize
   def __init__(self, music_path: str):
-    
+
     # store musicpath 
     self.music_path = music_path
 
@@ -99,6 +99,16 @@ class Player:
 
     # initialize music player state with first track and a ready music player
     pygame.mixer.init()
+
+    # play startup message
+    print("playing startup message")
+    pygame.mixer.music.load("musikbox-gestartet.mp3")
+    pygame.mixer.music.play()
+    time.sleep(2)
+    print("playing startup message - done")
+    pygame.mixer.music.pause()
+
+    # play first track
     pygame.mixer.music.load(self.title_list[self.title_pos])
     pygame.mixer.music.play()
     pygame.mixer.music.pause()
