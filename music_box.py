@@ -69,6 +69,22 @@ class Player:
   # - optional musicpath
   music_path  = '.'
 
+  # timestamp for last button press (or initialization time at start)
+  last_press = time.time()
+  
+  # - time between button presses
+  time_between_presses = 0.3
+  
+  # check if time between button presses is ok
+  def check_press(self):
+    """
+    Method for checking if time between button presses is ok.
+    """
+    if (time.time() - self.last_press) < self.time_between_presses:
+      return False
+    else:
+      self.last_press = time.time()
+      return True
 
 
   # Initialize
@@ -118,6 +134,7 @@ class Player:
     """
     Method for refreshing the current list of folders.
     """
+
     pth = self.music_path
     self.dir_list = [os.path.join(pth, f)  for f in os.listdir(pth) if os.path.isdir(os.path.join(pth, f))]
     self.dir_list.sort()
@@ -131,7 +148,7 @@ class Player:
     Args:
         pre (str): A string prefix, to be printed before
     """
-    print(pre, self.dir_pos, self.dir_list[self.dir_pos], self.title_pos, self.title_list[self.title_pos])
+    print(pre, "dir_pos: ", self.dir_pos, "dir: ", self.dir_list[self.dir_pos], "title_pos: ", self.title_pos, "title: ", self.title_list[self.title_pos])
 
 
 
@@ -139,6 +156,10 @@ class Player:
     """
     Method for acting on folder-forward button push: going to next folder in list
     """
+    # check if time between button presses is ok
+    if not self.check_press():
+      return
+    
     self.refresh_dir_list()
     new_pos = min(len(self.dir_list) - 1, self.dir_pos + 1)
 
@@ -155,6 +176,10 @@ class Player:
     """
     Method for acting on folder-backward button push: going to previous folder in list
     """
+    # check if time between button presses is ok
+    if not self.check_press():
+      return
+    
     self.refresh_dir_list()
     new_pos = max(0, self.dir_pos - 1)
 
@@ -171,26 +196,34 @@ class Player:
     """
     Method for acting on title-forward button push: going to next title in list
     """
+    # check if time between button presses is ok
+    if not self.check_press():
+      return
+    
     new_pos = min(len(self.title_list) - 1 , self.title_pos + 1)
 
     if new_pos is not self.title_pos:
       self.title_pos = new_pos
       self.play_current_title_item()
 
-    self.info("|>")
+    self.info("->")
   
 
   def title_backward(self):
     """
     Method for acting on title-backward button push: going to previous title in list
     """
+    # check if time between button presses is ok
+    if not self.check_press():
+      return
+    
     new_pos = max(0, self.title_pos - 1)
     
     if new_pos is not self.title_pos:
       self.title_pos = new_pos
       self.play_current_title_item()
 
-    self.info("<|")
+    self.info("<-")
 
 
   def play_current_title_item(self):
@@ -208,35 +241,22 @@ class Player:
     """
     Method alternating between play and pause.
     """
+    # check if time between button presses is ok
+    if not self.check_press():
+      self.info(" too fast --")
+      return
 
-    # check if maybe player is done playing or not
-    if pygame.mixer.music.get_busy() == 0:
-        # if player is done restart current title and unpause
-
-        pygame.mixer.music.play()
+    # pause --> unpause
+    if self.play_state == "pause":
+        self.info("|>")
         pygame.mixer.music.unpause()
         self.play_state = "unpause"
 
-    else:
-        # if player still has some title to play switch pause state
-
-        # pause --> unpause
-        if self.play_state == "pause":
-            pygame.mixer.music.unpause()
-            self.play_state = "unpause"
-
-        # unpause --> pause
-        elif self.play_state == "unpause":
-            pygame.mixer.music.pause()
-            self.play_state = "pause"
-
-    # print some feedback to console
-    if self.play_state == "pause":
-      self.info("||")
-    else:
-      self.info("~~")
-
-
+    # unpause --> pause
+    elif self.play_state == "unpause":
+        self.info("||")
+        pygame.mixer.music.pause()
+        self.play_state = "pause"
 
 
 
@@ -244,7 +264,7 @@ class Player:
 
 
 # initialize player 
-player = Player(music_path = '/home/pi/musicbox/music')
+player = Player(music_path = '/home/musicpi/musicbox/music')
 
 # initialize buttons
 play_pause_btn      = Button(23)
@@ -266,14 +286,14 @@ go_on = True
 while go_on == True:
   
   # if player is idle, play next track
-  if pygame.mixer.music.get_busy() == 0:
+  if pygame.mixer.music.get_busy() == 0 and player.play_state == "unpause":
     if (player.title_pos + 1) < len(player.title_list):
       player.title_forward()
     time.sleep(1)
   
   # if busy, just wait a little bit and check again
   else:
-    time.sleep(0.01)
+    time.sleep(0.1)
 
 
 
