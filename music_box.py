@@ -18,10 +18,15 @@
 from gpiozero import Button
 
 import pygame
-import time
+from mutagen.mp3 import MP3
 
+import datetime
+import time
 import os
+
 from typing import List
+
+
 
 
 
@@ -43,6 +48,26 @@ def list_dir_recursive(path: str) -> List[str]:
           res.append(os.path.join(currentpath, file))
   return res
 
+def get_mp3_length(path: str) -> float:
+  """
+  Returns the length of an mp3 file in seconds.
+
+  Args:
+      path (str): path to mp3 file
+
+  Returns:
+      float: length of mp3 file in seconds
+  """
+  try:
+    audio = MP3(path)
+    return audio.info.length
+  except ID3NoHeaderError:
+    print("No ID3 header found in the file.")
+    return 0.0
+  except Exception as e:
+    print(f"An error occurred while reading the file: {e}")
+    return 0.0
+
 
 
 #### Classes #### --------------------------------------------------------------
@@ -62,18 +87,22 @@ class Player:
   # - current title
   title_list = []
   title_pos  = 0
-
+  
   # - current play state
   play_state = "pause"
 
   # - optional musicpath
   music_path  = '.'
 
+  
+  
+  # - option for minumum time between button presses
+  time_between_presses = 0.3
   # timestamp for last button press (or initialization time at start)
   last_press = time.time()
-  
-  # - time between button presses
-  time_between_presses = 0.3
+
+
+
   
   # check if time between button presses is ok
   def check_press(self):
@@ -85,6 +114,15 @@ class Player:
     else:
       self.last_press = time.time()
       return True
+
+  def music_load(self, path: str):
+    """
+    Method for loading a new mp3 file.
+
+    Args:
+        path (str): path to mp3 file
+    """
+    pygame.mixer.music.load(path)
 
 
   # Initialize
@@ -102,14 +140,14 @@ class Player:
 
     # play startup message
     print("playing startup message")
-    pygame.mixer.music.load("musikbox-gestartet.mp3")
+    self.music_load("musikbox-gestartet.mp3")
     pygame.mixer.music.play()
     time.sleep(2)
     print("playing startup message - done")
     pygame.mixer.music.pause()
 
     # play first track
-    pygame.mixer.music.load(self.title_list[self.title_pos])
+    self.music_load(self.title_list[self.title_pos])
     pygame.mixer.music.play()
     pygame.mixer.music.pause()
 
@@ -158,7 +196,13 @@ class Player:
     Args:
         pre (str): A string prefix, to be printed before
     """
-    print(pre, "dir_pos: ", self.dir_pos, "dir: ", self.dir_list[self.dir_pos], "title_pos: ", self.title_pos, "title: ", self.title_list[self.title_pos])
+    print(
+      pre, 
+      "; dir_pos: ", self.dir_pos, 
+      "; dir: ", self.dir_list[self.dir_pos], 
+      "; title_pos: ", self.title_pos, 
+      "; title: ", self.title_list[self.title_pos]
+    )
 
 
 
@@ -209,7 +253,7 @@ class Player:
     # check if time between button presses is ok
     if not self.check_press():
       return
-    
+
     new_pos = min(len(self.title_list) - 1 , self.title_pos + 1)
 
     if new_pos is not self.title_pos:
@@ -240,7 +284,7 @@ class Player:
     """
     Method for playing current title.
     """
-    pygame.mixer.music.load(self.title_list[self.title_pos])
+    self.music_load(self.title_list[self.title_pos])
     pygame.mixer.music.play()
     pygame.mixer.music.unpause()
     self.play_state = "unpause"
@@ -253,7 +297,7 @@ class Player:
     """
     # check if time between button presses is ok
     if not self.check_press():
-      self.info(" too fast --")
+      self.info("X button press ignored, too fast --")
       return
 
     # pause --> unpause
@@ -289,21 +333,23 @@ title_forward_btn.when_pressed   = player.title_forward
 title_backward_btn.when_pressed  = player.title_backward
 folder_forward_btn.when_pressed  = player.folder_forward
 folder_backward_btn.when_pressed = player.folder_backward
-  
 
 print("loop")
 go_on = True
 while go_on == True:
   
   # if player is idle, play next track
-  if pygame.mixer.music.get_busy() == 0 and player.play_state == "unpause":
+  not_busy = pygame.mixer.music.get_busy() == 0
+  should_play = player.play_state == "unpause" 
+
+  if not_busy and should_play:
     if (player.title_pos + 1) < len(player.title_list):
       player.title_forward()
     time.sleep(1)
   
   # if busy, just wait a little bit and check again
   else:
-    time.sleep(0.1)
+    time.sleep(0.2)
 
 
 
