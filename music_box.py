@@ -18,7 +18,6 @@
 from gpiozero import Button
 
 import pygame
-from mutagen.mp3 import MP3
 
 import datetime
 import time
@@ -48,25 +47,6 @@ def list_dir_recursive(path: str) -> List[str]:
           res.append(os.path.join(currentpath, file))
   return res
 
-def get_mp3_length(path: str) -> float:
-  """
-  Returns the length of an mp3 file in seconds.
-
-  Args:
-      path (str): path to mp3 file
-
-  Returns:
-      float: length of mp3 file in seconds
-  """
-  try:
-    audio = MP3(path)
-    return audio.info.length
-  except ID3NoHeaderError:
-    print("No ID3 header found in the file.")
-    return 0.0
-  except Exception as e:
-    print(f"An error occurred while reading the file: {e}")
-    return 0.0
 
 
 
@@ -134,6 +114,9 @@ class Player:
     # read in directories and titles in music path
     self.refresh_dir_list()
     self.refresh_title_list()
+
+    print("dir_list: ", self.dir_list)
+    print("title_list: ", self.title_list)
 
     # initialize music player state with first track and a ready music player
     pygame.mixer.init()
